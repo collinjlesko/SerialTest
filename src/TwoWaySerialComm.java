@@ -6,10 +6,16 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 
 public class TwoWaySerialComm
 {
+	public static String newline = System.getProperty("line.separator");
+    static String RGB = "255 0 0 256";
+	static int rgbSet = 1;
+	SerialPort serialPort;
+
     public TwoWaySerialComm()
     {
         super();
@@ -28,10 +34,11 @@ public class TwoWaySerialComm
             
             if ( commPort instanceof SerialPort )
             {
-                SerialPort serialPort = (SerialPort) commPort;
+                serialPort = (SerialPort) commPort;
                 serialPort.setSerialPortParams(9600,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
                 
                 InputStream in = serialPort.getInputStream();
+                Thread.sleep(2000); //required for arduino listen
                 OutputStream out = serialPort.getOutputStream();
                 
                 (new Thread(new SerialReader(in))).start();
@@ -45,7 +52,30 @@ public class TwoWaySerialComm
         }     
     }
     
-    /** */
+    public String getRGB() {
+		return RGB;
+	}
+
+	public void setRGB(String rGB) throws InterruptedException, IOException {
+		RGB = rGB;
+		System.out.println("SETRGB: " + RGB);
+		setRgbSet(1);
+
+		Thread.sleep(200); //required for arduino listen
+        OutputStream out = serialPort.getOutputStream();
+        
+        (new Thread(new SerialWriter(out))).start();
+	}
+	
+	 public static int getRgbSet() {
+			return rgbSet;
+		}
+	
+		public void setRgbSet(int rgbset) {
+			rgbSet = rgbset;
+		}
+
+	/** */
     public static class SerialReader implements Runnable 
     {
         InputStream in;
@@ -72,6 +102,13 @@ public class TwoWaySerialComm
             }            
         }
     }
+    
+    /**
+	 * Writes a new line in the printer
+	 */
+	public static void newLine(OutputStream outputStream) throws IOException {
+		outputStream.write(new byte[] { 10, 13 });
+	}
 
     /** */
     public static class SerialWriter implements Runnable 
@@ -87,11 +124,37 @@ public class TwoWaySerialComm
         {
             try
             {                
-                int c = 0;
-                while ( ( c = System.in.read()) > -1 )
-                {
-                    this.out.write(c);
-                }                
+                int c = 0;              
+//                while ( ( c = rgbSet) > -1 )
+//                {
+                    //this.out.write(c);            
+//                	byte out[] = new byte[3];
+//                	out[0] = (byte) Integer.parseInt(RGBA[0]);
+//                	out[1] = (byte) Integer.parseInt(RGBA[1]);
+//                	out[2] = (byte) Integer.parseInt(RGBA[2]);          	
+//                    this.out.write(Integer.parseInt(RGBA[0]));
+//                    this.out.write(Integer.parseInt(RGBA[1]));
+//                    this.out.write(Integer.parseInt(RGBA[2]));
+//                    this.out.write(Integer.parseInt(RGBA[3]));
+                	//this.out.write(RGB.getBytes(), 0, RGB.length());
+                	//System.out.println(rgbSet);
+                	if (rgbSet == 1) {  
+                    	String[] RGBA = RGB.split(" ");
+                    	System.out.println("INSIDEIF: " + RGB);
+                	try {
+                	    byte[] bytes = RGB.getBytes();
+//                	    System.out.print(bytes);
+                	    for (int i=0; i<bytes.length; i++) 
+                	        this.out.write(bytes[i]);    
+                	    this.out.flush();
+                	}
+                	catch (UnsupportedEncodingException e) {}
+                    rgbSet--;
+                	} else {
+                		rgbSet=0;
+                	}
+                
+//                }                
             }
             catch ( IOException e )
             {

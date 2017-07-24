@@ -7,19 +7,32 @@ import javax.swing.JComboBox;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.awt.event.ActionEvent;
 
 public class GuiApp1 {
-    
+	static TwoWaySerialComm CommA;
     //Note: Typically the main method will be in a
     //separate class. As this is a simple one class
     //example it's all in the one class.
     public static void main(String[] args) {
         
         new GuiApp1();
+        CommA = new TwoWaySerialComm(); 
+        try
+        {
+           CommA.connect("COM4");
+        }
+        catch ( Exception e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public GuiApp1()
@@ -70,8 +83,18 @@ public class GuiApp1 {
                //value or vice versa.
             	
             	//LIGHTING
-            	System.out.println("Red: " + redval.getText() + " Green: " + greenval.getText() + " Blue: " + blueval.getText());
-            	
+            	if (redval.getText().isEmpty() || greenval.getText().isEmpty() || blueval.getText().isEmpty()) {
+            		JOptionPane.showMessageDialog(null, "All Values Must Be Filled.", "Error", JOptionPane.PLAIN_MESSAGE);
+            	} else {
+            	System.out.println("Red: " + redval.getText() + " Green: " + greenval.getText() + " Blue: " + blueval.getText() + "\n");
+            	CommA.setRgbSet(1);
+            	try {
+					CommA.setRGB(redval.getText() + " " + greenval.getText() + " " + blueval.getText() + " " + "256");
+				} catch (InterruptedException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	}
             }
         });
         
